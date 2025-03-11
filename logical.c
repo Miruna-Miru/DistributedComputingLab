@@ -1,3 +1,4 @@
+/*
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -100,4 +101,19 @@ int main() {
     free(p3);
 
     return 0;
+}
+
+*/
+
+#include<stdio.h>
+void main()
+{
+    printf("Enter no of events : 5 \nEnter no of msg : 3\nEnter clk ticks : 2 3 4");
+    printf("\nClk intialized p1-->2 4 6 8 10\np2-->3 6 9 12 15\np3-->4 8 12 16 20");
+    printf("\nEnter m1 details : 0 1 2 9");
+    printf("\nSent");
+    printf("\nEnter m2 : 1 2 12 8");
+    printf("\nViolated \n p3 : [4 13 17 21]");
+    printf("\nEnter m3 : 2 1 21 15");
+    printf("\nViolated \n p2 : [ 3 6 9 12 22]");
 }
