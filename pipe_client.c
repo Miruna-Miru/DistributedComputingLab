@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <stdio.h>
+#include <string.h>
 
 #define PIPE_NAME "\\\\.\\pipe\\MyPipe"
 #define BUFFER_SIZE 512
@@ -11,43 +12,53 @@ int main() {
 
     printf("Connecting to server...\n");
 
-    // Connect to the named pipe
-    hPipe = CreateFile(
-        PIPE_NAME,
-        GENERIC_READ | GENERIC_WRITE,  // Read/Write access
-        0,                             // No sharing
-        NULL,                          // Default security attributes
-        OPEN_EXISTING,                 // Opens existing pipe
-        0,                             // Default attributes
-        NULL                           // No template file
-    );
+    while (1) {
+        hPipe = CreateFile(
+            PIPE_NAME, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL
+        );
 
-    if (hPipe == INVALID_HANDLE_VALUE) {
-        printf("Error: Could not connect to server. Error Code: %ld\n", GetLastError());
-        return 1;
+        if (hPipe != INVALID_HANDLE_VALUE) break;
+        
+        // If server is down, exit client
+        if (GetLastError() == ERROR_PIPE_BUSY || GetLastError() == ERROR_FILE_NOT_FOUND) {
+            printf("Server not available. Retrying...\n");
+            Sleep(1000);
+        } else {
+            printf("Error: Could not connect to server. Error Code: %ld\n", GetLastError());
+            return 1;
+        }
     }
 
-    printf("Connected to server. Sending message...\n");
+    printf("Connected to server. Start chatting...\n");
 
-    // Send a message to the server
-    const char *message = "Hello from client!";
-    if (WriteFile(hPipe, message, strlen(message), &bytesWritten, NULL)) {
-        printf("Message sent to server: %s\n", message);
-    } else {
-        printf("Error: Could not write to pipe. Error Code: %ld\n", GetLastError());
-        CloseHandle(hPipe);
-        return 1;
+    while (1) {
+        // Get client input
+        printf("Client: ");
+        fgets(buffer, BUFFER_SIZE, stdin);
+        buffer[strcspn(buffer, "\n")] = 0;
+
+        // Send message to server
+        if (!WriteFile(hPipe, buffer, strlen(buffer), &bytesWritten, NULL)) {
+            printf("Error writing to server. Closing...\n");
+            break;
+        }
+
+        // If client sends "stop", terminate the connection
+        if (strcmp(buffer, "stop") == 0) {
+            printf("Client sent stop. Closing connection...\n");
+            break;
+        }
+
+        // Read response from server
+        if (!ReadFile(hPipe, buffer, BUFFER_SIZE, &bytesRead, NULL) || bytesRead == 0) {
+            printf("Server disconnected. Closing client...\n");
+            break;
+        }
+
+        buffer[bytesRead] = '\0';
+        printf("Server: %s\n", buffer);
     }
 
-    // Read the response from the server
-    if (ReadFile(hPipe, buffer, BUFFER_SIZE, &bytesRead, NULL)) {
-        buffer[bytesRead] = '\0';  // Null-terminate the received string
-        printf("Response received from server: %s\n", buffer);
-    } else {
-        printf("Error: Could not read from pipe. Error Code: %ld\n", GetLastError());
-    }
-
-    // Close the pipe
     CloseHandle(hPipe);
     printf("Pipe closed. Client shutting down.\n");
 
