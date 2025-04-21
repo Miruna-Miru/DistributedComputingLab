@@ -9,8 +9,10 @@ int main()
     #pragma omp parallel shared(x) num_threads(3)
     {
         #pragma omp critical
+        {
         printf("Performing thread operation...\n");
         x = x + 1;
+        }
     }  /* end of parallel section */
 
     // Print the final value of x
