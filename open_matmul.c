@@ -5,6 +5,7 @@
 
 void main()
 {
+    omp_set_num_threads(3);
      int a[n][n],b[n][n],c[n][n];
      int i,j,k;
      for( i=0;i<n;i++)
@@ -20,6 +21,7 @@ void main()
      #pragma omp parallel for private(i,j,k) shared(a,b,c)
      for(i=0;i<n;i++)
      {
+        printf("Performing by : %d",omp_get_thread_num());
      for(j=0;j<n;j++)
      {
      for(k=0;k<n;k++)
